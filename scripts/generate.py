@@ -38,25 +38,23 @@ THEMES = {
         "bg": "#0d1117", "panel": "#161b22", "border": "#30363d", "grid": "#21262d",
         "text": "#e6edf3", "muted": "#8b949e", "faint": "#484f58",
         "accent": "#39d0d8", "accent2": "#a371f7", "accent3": "#f0b429", "ok": "#3fb950",
-        # Contribution levels 0..4 (top faces of the skyline).
+        # Contribution levels 0..4, as on the GitHub calendar.
         "levels": ["#1c2128", "#13646c", "#1a9aa4", "#2fd0da", "#8af7fc"],
-        "shade_front": 0.78, "shade_side": 0.58,
     },
     "light": {
         "bg": "#ffffff", "panel": "#f6f8fa", "border": "#d0d7de", "grid": "#eaeef2",
         "text": "#1f2328", "muted": "#656d76", "faint": "#afb8c1",
         "accent": "#0a7ea4", "accent2": "#8250df", "accent3": "#bf8700", "ok": "#1a7f37",
         "levels": ["#e4e9ee", "#a5e3ea", "#4cc2cf", "#1494a4", "#0b5f6d"],
-        "shade_front": 0.86, "shade_side": 0.7,
     },
 }
 
 ROLES = [
-    "C & C++ student @ 42 Mulhouse",
-    "Go backends, Postgres & Docker",
-    "Flutter / Dart mobile apps",
-    "Kubernetes tinkerer: K3s, Argo CD",
-    "Godot & Garry's Mod gamedev",
+    "backend: Go, Python, PostgreSQL",
+    "infra: Docker, Kubernetes, Nginx",
+    "microservices, auth & observability",
+    "gamedev on the side: Godot, Lua",
+    "open to internships",
 ]
 
 # ASCII only: box-drawing glyphs fall back to fonts with other widths.
@@ -188,11 +186,6 @@ def summarize(user: dict) -> dict:
 
 # ------------------------------------------------------------------ helpers
 
-def shade(hex_color: str, factor: float) -> str:
-    r, g, b = (int(hex_color[i:i + 2], 16) for i in (1, 3, 5))
-    return "#%02x%02x%02x" % tuple(max(0, min(255, round(c * factor))) for c in (r, g, b))
-
-
 def luminance(hex_color: str) -> float:
     r, g, b = (int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5))
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -315,7 +308,7 @@ def header(s: dict, t: dict) -> str:
       {sparks}
     </g>
     <text x="54" y="86" class="name in">{escape(s["name"])}</text>
-    <text x="56" y="116" class="aka in d1">aka @{LOGIN} · software developer in the making</text>
+    <text x="56" y="116" class="aka in d1">aka @{LOGIN} · backend &amp; infrastructure developer</text>
     <g class="in d2"><text x="{tx - 24}" y="{ty}" class="pr">❯</text>{"".join(roles)}</g>
     {"".join(orbits)}{nucleus}
     """
@@ -325,20 +318,21 @@ def header(s: dict, t: dict) -> str:
 # ----------------------------------------------------------------- terminal
 
 def terminal(s: dict, t: dict) -> str:
-    w, h = 900, 400
+    w, h = 900, 430
     top = [lang for lang, _ in s["langs"][:4]]
     info = [
         ("title", f"{LOGIN.lower()}@github"),
         ("rule", "─" * 26),
         ("Name", s["name"]),
-        ("School", "42 Mulhouse · Common Core"),
+        ("Role", "backend & infra developer"),
+        ("School", "42 Mulhouse · Common Core done"),
         ("Uptime", s["uptime"]),
         ("Repos", f"{s['repos']} public · {s['stars']} ★ · {s['followers']} followers"),
         ("Contribs", f"{s['total']} in the last year ({s['active_days']} active days)"),
         ("Streak", f"current {s['current_streak']}d · best {s['best_streak']}d"),
         ("Langs", " · ".join(top)),
-        ("Stack", "Go · Flutter · Docker · K3s · Godot"),
-        ("Shell", "zsh + a lot of Makefiles"),
+        ("Stack", "Go · Python · PostgreSQL · Docker · K8s"),
+        ("Status", "open to internships"),
         ("Last push", f"{s['last_repo']} ({s['last_push']})"),
     ]
 
@@ -402,107 +396,6 @@ def terminal(s: dict, t: dict) -> str:
     </g>
     """
     return svg(w, h, body, f"neofetch-style summary of {LOGIN}'s GitHub profile", style)
-
-
-# ------------------------------------------------------------------ skyline
-
-def skyline(s: dict, t: dict) -> str:
-    """The contribution calendar as an oblique-projection city, built tower by tower."""
-    w = 900
-    weeks = s["weeks"]
-    ux, uy = 14.0, 3.6      # one week to the right (and slightly down)
-    vx, vy = -6.5, 6.5      # one weekday towards the viewer
-    fill = 0.82
-    max_h = 92.0
-    peak = max((d["contributionCount"] for wk in weeks for d in wk), default=1) or 1
-
-    origin_x = 50 + 7 * -vx
-    origin_y = 40 + max_h
-    level_index = {"NONE": 0, "FIRST_QUARTILE": 1, "SECOND_QUARTILE": 2, "THIRD_QUARTILE": 3, "FOURTH_QUARTILE": 4}
-
-    cells = []
-    for wi, wk in enumerate(weeks):
-        for d in wk:
-            di = dt.date.fromisoformat(d["date"]).isoweekday() % 7  # Sunday = 0, as on GitHub
-            cells.append((wi, di, d))
-    cells.sort(key=lambda c: (c[0] + c[1], c[1]))
-
-    def pt(px: float, py: float) -> str:
-        return f"{px:.1f},{py:.1f}"
-
-    towers = []
-    for wi, di, d in cells:
-        n = d["contributionCount"]
-        lvl = level_index.get(d["contributionLevel"], 0)
-        height = 2.0 if n == 0 else 6 + (max_h - 6) * math.sqrt(n / peak)
-        ax = origin_x + wi * ux + di * vx
-        ay = origin_y + wi * uy + di * vy
-        bx, by = ax + ux * fill, ay + uy * fill
-        dx, dy = ax + vx * fill, ay + vy * fill
-        cx, cy = bx + vx * fill, by + vy * fill
-        top_color = t["levels"][lvl]
-        top = f'{pt(ax, ay - height)} {pt(bx, by - height)} {pt(cx, cy - height)} {pt(dx, dy - height)}'
-        front = f'{pt(dx, dy - height)} {pt(cx, cy - height)} {pt(cx, cy)} {pt(dx, dy)}'
-        side = f'{pt(bx, by - height)} {pt(cx, cy - height)} {pt(cx, cy)} {pt(bx, by)}'
-        tip = f'{n} contribution{"s" if n != 1 else ""} on {d["date"]}'
-        delay = (wi + di) * 0.022
-        towers.append(
-            f'<g class="t" style="animation-delay:{delay:.2f}s"><title>{tip}</title>'
-            f'<polygon points="{front}" fill="{shade(top_color, t["shade_front"])}"/>'
-            f'<polygon points="{side}" fill="{shade(top_color, t["shade_side"])}"/>'
-            f'<polygon points="{top}" fill="{top_color}"/></g>'
-        )
-
-    # Month labels along the front edge.
-    labels = []
-    last_month = None
-    for wi, wk in enumerate(weeks):
-        month = dt.date.fromisoformat(wk[0]["date"]).strftime("%b")
-        if month != last_month and wi < len(weeks) - 2:
-            lx = origin_x + wi * ux + 7 * vx + 4
-            ly = origin_y + wi * uy + 7 * vy + 18
-            angle = math.degrees(math.atan2(uy, ux))
-            labels.append(f'<text x="{lx:.1f}" y="{ly:.1f}" class="mo" transform="rotate({angle:.1f} {lx:.1f} {ly:.1f})">{month}</text>')
-        last_month = month
-
-    bd = s["best_day"]
-    stats = [
-        (f"{s['total']}", "contributions"),
-        (f"{s['commits']}", "commits"),
-        (f"{s['best_streak']}d", "best streak"),
-        (f"{bd['contributionCount']}", f"best day · {dt.date.fromisoformat(bd['date']).strftime('%d %b')}"),
-    ]
-    stat_svg = "".join(
-        f'<g transform="translate({w - 40 - (len(stats) - 1 - i) * 128} 52)" class="st" style="animation-delay:{1.4 + i * 0.15:.2f}s">'
-        f'<text class="big" text-anchor="end">{escape(v)}</text><text y="20" class="lbl" text-anchor="end">{escape(k)}</text></g>'
-        for i, (v, k) in enumerate(stats)
-    )
-    height = int(origin_y + len(weeks) * uy + 7 * vy + 44)
-
-    legend = "".join(f'<rect x="{w - 150 + i * 16}" y="{height - 30}" width="12" height="12" rx="2" fill="{c}"/>'
-                     for i, c in enumerate(t["levels"]))
-    style = f"""
-      .t {{ transform-box: fill-box; transform-origin: 50% 100%; animation: grow 1s cubic-bezier(.2,.9,.25,1.15) both; }}
-      @keyframes grow {{ from {{ transform: scaleY(0); opacity: 0 }} 30% {{ opacity: 1 }} to {{ transform: scaleY(1) }} }}
-      .mo {{ font: 11px {MONO}; fill: {t["muted"]}; }}
-      .h  {{ font: 700 16px {SANS}; fill: {t["text"]}; }}
-      .sub {{ font: 12px {MONO}; fill: {t["muted"]}; }}
-      .big {{ font: 800 26px {SANS}; fill: {t["accent"]}; }}
-      .lbl {{ font: 12px {SANS}; fill: {t["muted"]}; }}
-      .st {{ animation: show .6s ease-out both; }}
-      @keyframes show {{ from {{ opacity: 0; transform: translateY(8px) }} to {{ opacity: 1 }} }}
-    """
-    body = f"""
-    {panel(t, w, height)}
-    <text x="24" y="34" class="h">contribution skyline</text>
-    <text x="24" y="54" class="sub">last 12 months · one tower per day</text>
-    {"".join(towers)}
-    {"".join(labels)}
-    {stat_svg}
-    <text x="{w - 158}" y="{height - 20}" class="lbl" text-anchor="end">less</text>{legend}
-    <text x="{w - 64}" y="{height - 20}" class="lbl">more</text>
-    """
-    return svg(w, height, body, f"{s['total']} contributions in the last year, drawn as a 3D skyline", style)
 
 
 # ---------------------------------------------------------------- languages
@@ -572,7 +465,7 @@ def footer(s: dict, t: dict) -> str:
 # ------------------------------------------------------------------- README
 
 EVENT_TEXT = {
-    "PushEvent": ("🔨", lambda e: f"pushed {len(e['payload'].get('commits', [])) or 'some'} commit(s) to"),
+    "PushEvent": ("🔨", lambda e: "pushed to"),
     "CreateEvent": ("🌱", lambda e: f"created {e['payload'].get('ref_type', 'something')} in"),
     "PullRequestEvent": ("🔀", lambda e: f"{e['payload'].get('action', 'touched')} a pull request in"),
     "IssuesEvent": ("🐛", lambda e: f"{e['payload'].get('action', 'touched')} an issue in"),
@@ -586,7 +479,8 @@ EVENT_TEXT = {
 def activity(s: dict) -> str:
     rows, seen = [], set()
     for e in s["events"]:
-        if e["type"] not in EVENT_TEXT:
+        # Skip this repo: the nightly workflow pushes to it.
+        if e["type"] not in EVENT_TEXT or e["repo"]["name"] == f"{LOGIN}/{LOGIN}":
             continue
         icon, text = EVENT_TEXT[e["type"]]
         repo = e["repo"]["name"]
@@ -617,8 +511,7 @@ def update_readme(s: dict) -> None:
 def main() -> None:
     s = summarize(fetch())
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, render in [("header", header), ("terminal", terminal), ("skyline", skyline),
-                         ("languages", languages), ("footer", footer)]:
+    for name, render in [("header", header), ("terminal", terminal), ("languages", languages), ("footer", footer)]:
         for theme, palette in THEMES.items():
             (OUT / f"{name}-{theme}.svg").write_text(render(s, palette))
     update_readme(s)

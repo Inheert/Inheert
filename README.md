@@ -3,81 +3,63 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/generated/header-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/generated/header-light.svg">
-  <img alt="Théo Claereboudt, aka Inheert" src="assets/generated/header-dark.svg" width="100%">
+  <img alt="Théo Claereboudt, aka Inheert, backend and infrastructure developer" src="assets/generated/header-dark.svg" width="100%">
 </picture>
+
+<a href="https://www.theocldt.dev/"><img alt="Portfolio" src="https://img.shields.io/badge/portfolio-theocldt.dev-39d0d8?style=for-the-badge&labelColor=161b22"></a> <a href="https://www.linkedin.com/in/theo-cldt/"><img alt="LinkedIn" src="https://img.shields.io/badge/linkedin-theo--cldt-0a66c2?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=161b22"></a> <a href="mailto:theoclaereboudt@gmail.com"><img alt="Email" src="https://img.shields.io/badge/email-theoclaereboudt%40gmail.com-a371f7?style=for-the-badge&logo=gmail&logoColor=white&labelColor=161b22"></a>
+
+**🟢 Open to internships**: backend, DevOps or platform roles
 
 </div>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/generated/terminal-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/generated/terminal-light.svg">
-  <img alt="neofetch-style summary: name, school, uptime, repos, contributions, streaks, languages and stack" src="assets/generated/terminal-dark.svg" width="100%">
+  <img alt="neofetch-style summary: name, role, school, uptime, repos, contributions, streaks, languages, stack and status" src="assets/generated/terminal-dark.svg" width="100%">
 </picture>
 
 ### `$ cat about.md`
 
-I'm Théo, a student at **42 Mulhouse** 🇫🇷. I started out writing Python pipelines for medical research data, fell into C at 42, and now I mostly build things end to end: a Go backend, the Flutter app on top of it, and the Docker / Kubernetes setup underneath.
+I'm Théo, a **backend and infrastructure developer** who has finished the Common Core at **42 Mulhouse** 🇫🇷. I like owning the part of a product that nobody sees: the API, the database, the auth, the containers, the logs, and the way they fit together.
 
-- 🔭 **Right now:** a Flutter + Go app, and [Inception-of-things](https://github.com/Inheert/Inception-of-things) (K3s, K3d, Argo CD)
-- 🎮 **On the side:** small games in Godot, and Garry's Mod gamemodes in Lua since 2023
-- 🌱 **Learning:** Kubernetes for real, and writing APIs that don't break their clients
-- 💬 **Ask me about:** writing a shell from scratch, philosophers who keep dying, raycasting
+Before 42 I was already shipping to production: for over a year I built and ran, alone, a data platform for medical research. Today I design microservice architectures, write Go and Python services, and deploy them with Docker and Kubernetes. On the side, I make games in Godot.
+
+### `$ cat experience.log`
+
+#### 🏥 Sole developer, thyroid research data platform · 2022 – 2023
+
+An internal platform that gathers the public data on thyroid diseases from scientific publications and clinical trials, for a medical research team.
+
+- **Collection:** daily automated ingestion from 2 platforms, by scraping (Requests, BeautifulSoup) and public APIs, scheduled with cron
+- **Data:** a PostgreSQL database of several million records
+- **App:** Django with accounts and roles for the team, and Dash dashboards embedded in Django
+- **Production:** a VPS running Docker Compose behind an Nginx reverse proxy over HTTPS
+
+`Python` `Django` `Dash` `PostgreSQL` `Docker Compose` `Nginx` `cron`
 
 ### `$ ls ~/projects --sort=pride`
 
-| | Project | What it is | Built with |
+| | Project | What I did | Built with |
 |:-:|---|---|---|
-| 🐚 | [**minishell**](https://github.com/Inheert/minishell) | A bash-like shell: parsing, pipes, redirections, signals, builtins | C |
-| 🧭 | [**Cub3D**](https://github.com/Inheert/Cub3D) | A Wolfenstein-style raycaster | C, MiniLibX |
-| ☸️ | [**Inception-of-things**](https://github.com/Inheert/Inception-of-things) | Vagrant + K3s clusters, then GitOps with K3d and Argo CD | Vagrant, K3s, Argo CD |
-| 🐳 | [**Inception**](https://github.com/Inheert/Inception) | A small infrastructure of services, each in its own container | Docker Compose |
-| 🍝 | [**Philosophers**](https://github.com/Inheert/Philosophers) | The dining philosophers, with threads and mutexes | C, pthreads |
-| ♻️ | [**Garbage-collector**](https://github.com/Inheert/Garbage-collector) | A tiny allocator that frees everything for you | C |
-| 🏥 | [**hackaton-2026-medisignes**](https://github.com/Inheert/hackaton-2026-medisignes) | A health app built in a weekend at a 2026 hackathon | TypeScript, Expo |
-| 🔫 | [**Gmod-survival-gamemode**](https://github.com/Inheert/Gmod-survival-gamemode) | A PvP survival gamemode: characters, admin tools, logging | Lua |
+| 🛰️ | **BlueHub** <sub>(private, in progress)</sub> | A companion app for players of the game *Warpath*: player stats tracker, wiki, marketplace. I built the whole thing: a Go API and background worker that cache the game's API, one database per service, Keycloak auth with roles, and a Flutter client for desktop, mobile and web. | Go, PostgreSQL, Valkey, Keycloak, Caddy, Docker, Flutter |
+| 🃏 | [**ft_transcendence**](https://github.com/Dlouu/ft_transcendence) | A real-time multiplayer UNO, built by a team of 4. **Technical lead:** I designed the microservices architecture and built the Flask API gateway, the auth flow (tokens, zero-trust between services), the MariaDB schema, Nginx with HTTPS and WebSockets, the ELK logging stack and S3 storage. | Python, Flask, NestJS, MariaDB, Nginx, ELK, AWS S3, Docker |
+| ☸️ | [**Inception-of-things**](https://github.com/Inheert/Inception-of-things) | Kubernetes from the ground up: K3s clusters provisioned with Vagrant, then continuous deployment with K3d and Argo CD (GitOps). | Kubernetes, K3s, K3d, Argo CD, Vagrant |
+| 🐚 | [**minishell**](https://github.com/Inheert/minishell) | A bash-like shell: lexer and parser, pipes, redirections, heredocs, environment variables, signals and builtins. | C |
+| 🎮 | **Godot games** <sub>(private, in progress)</sub> | Games I build in my free time, in GDScript. | Godot, GDScript |
 
-### `$ git log --graph --all ~/life`
+### `$ cat stack.yml`
 
-```mermaid
-%%{init: {"gitGraph": {"mainBranchName": "life", "showCommitLabel": true}} }%%
-gitGraph
-  commit id: "2021: hello, GitHub"
-  branch python
-  checkout python
-  commit id: "2022: PubMed scrapers"
-  commit id: "2022: research APIs"
-  checkout life
-  branch school-42
-  checkout school-42
-  commit id: "2023: libft"
-  commit id: "ft_printf / gnl"
-  branch lua
-  checkout lua
-  commit id: "2023: Gmod addons"
-  checkout school-42
-  commit id: "2024: push_swap"
-  commit id: "pipex / so_long"
-  commit id: "minishell"
-  commit id: "philo / C++"
-  commit id: "Cub3D"
-  checkout lua
-  commit id: "2024: survival gamemode"
-  checkout school-42
-  commit id: "2025: Inception"
-  checkout life
-  merge school-42 id: "2026: hackathon"
-  commit id: "Inception-of-things"
-  merge lua id: "Godot games"
-  commit id: "Flutter + Go app" type: HIGHLIGHT
+```yaml
+backend:   [Go, Python, Django, Flask, REST APIs, WebSockets]
+data:      [PostgreSQL, MariaDB, Valkey/Redis, scraping, ETL with cron]
+infra:     [Docker, Docker Compose, Kubernetes, K3s, Argo CD, Nginx, Caddy, Linux, VPS]
+auth:      [Keycloak, OIDC, JWT, zero-trust between services]
+observe:   [ELK (Elasticsearch, Logstash, Kibana)]
+low-level: [C, C++]
+gamedev:   [Godot, GDScript, Lua (Garry's Mod)]
 ```
 
-### `$ ./skyline --last 365d`
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/generated/skyline-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="assets/generated/skyline-light.svg">
-  <img alt="Contributions of the last 12 months drawn as a 3D city, one tower per day" src="assets/generated/skyline-dark.svg" width="100%">
-</picture>
+### `$ ./langs --top 8`
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/generated/languages-dark.svg">
@@ -88,12 +70,23 @@ gitGraph
 ### `$ tail -f activity.log`
 
 <!-- ACTIVITY:START -->
-1. 🔨 pushed some commit(s) to [Inheert/Inheert](https://github.com/Inheert/Inheert) <sub>· 2026-10-20</sub>
-2. 🔨 pushed some commit(s) to [Inheert/Inception-of-things](https://github.com/Inheert/Inception-of-things) <sub>· 2026-10-08</sub>
+1. 🔨 pushed to [Inheert/Inception-of-things](https://github.com/Inheert/Inception-of-things) <sub>· 2026-10-08</sub>
 <!-- ACTIVITY:END -->
 
 <details>
-<summary><b>🐍 <code>$ ./snake --eat contributions</code></b> (click)</summary>
+<summary><b>🇫🇷 <code>$ cat a-propos.fr.md</code></b> (en français)</summary>
+<br>
+
+Je suis Théo, **développeur backend et infrastructure**, Common Core validé à **42 Mulhouse**. Ce qui me plaît, c'est la partie d'un produit qu'on ne voit pas : l'API, la base de données, l'authentification, les conteneurs, les logs, et la façon dont tout s'emboîte.
+
+- **Expérience :** de 2022 à 2023, seul développeur d'une plateforme interne pour une équipe de recherche médicale, qui rassemble les données publiques sur les pathologies de la thyroïde (publications scientifiques et essais cliniques). Collecte quotidienne automatisée (scraping et API publiques, cron), base PostgreSQL de plusieurs millions d'enregistrements, application Django avec comptes et rôles et tableaux de bord Dash, mise en production sur VPS avec Docker Compose derrière Nginx en HTTPS.
+- **Projets :** BlueHub, une app compagnon pour le jeu *Warpath* (Go, PostgreSQL, Keycloak, Flutter) ; lead technique de ft_transcendence (architecture microservices, gateway, auth, ELK) ; Kubernetes avec K3s et Argo CD.
+- **Je recherche un stage** en backend, DevOps ou plateforme. Contact : [theoclaereboudt@gmail.com](mailto:theoclaereboudt@gmail.com) · [LinkedIn](https://www.linkedin.com/in/theo-cldt/) · [theocldt.dev](https://www.theocldt.dev/)
+
+</details>
+
+<details>
+<summary><b>🐍 <code>$ ./snake --eat contributions</code></b></summary>
 <br>
 
 <picture>
@@ -108,13 +101,11 @@ gitGraph
 <summary><b>🛠️ <code>$ cat how-this-page-works.md</code></b></summary>
 <br>
 
-No third-party stats service, no visitor counter. Everything above is drawn by [`scripts/generate.py`](scripts/generate.py), about 500 lines of standard-library Python:
+No stats service, no visitor counter. The cards above are drawn by [`scripts/generate.py`](scripts/generate.py), standard-library Python only:
 
-1. A [GitHub Action](.github/workflows/profile.yml) runs every night and asks the GraphQL API for my contribution calendar, repos and languages.
+1. A [GitHub Action](.github/workflows/profile.yml) runs every night and asks the GraphQL API for my contributions, repos and languages.
 2. The script draws each card twice, as hand-written SVG with CSS and SMIL animations, once for the dark theme and once for the light one. `<picture>` picks the one that matches yours.
 3. It rewrites the activity log between two HTML comments in this README, and the Action commits the result.
-
-The skyline is an oblique projection of the calendar. Each day is a prism with three faces, drawn back to front so the near towers hide the far ones, and they all grow in a wave when the page loads. Hover a tower to see its day.
 
 </details>
 
