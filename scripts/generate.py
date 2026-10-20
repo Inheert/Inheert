@@ -519,21 +519,6 @@ def icon_metrics(t: dict) -> str:
     return "".join(out)
 
 
-def icon_cron(t: dict) -> str:
-    """A clock whose hand never stops."""
-    ticks = "".join(
-        f'<path d="M {32 + 20 * math.cos(math.radians(a)):.1f} {34 + 20 * math.sin(math.radians(a)):.1f} '
-        f'L {32 + 24 * math.cos(math.radians(a)):.1f} {34 + 24 * math.sin(math.radians(a)):.1f}" stroke="{t["muted"]}" stroke-width="2"/>'
-        for a in range(0, 360, 30)
-    )
-    return (f'<circle cx="32" cy="34" r="27" fill="none" stroke="{t["accent"]}" stroke-width="3"/>{ticks}'
-            f'<path d="M 32 34 V 20" stroke="{t["accent2"]}" stroke-width="3" stroke-linecap="round">'
-            f'<animateTransform attributeName="transform" type="rotate" from="0 32 34" to="360 32 34" dur="12s" repeatCount="indefinite"/></path>'
-            f'<path d="M 32 34 V 12" stroke="{t["accent"]}" stroke-width="2" stroke-linecap="round">'
-            f'<animateTransform attributeName="transform" type="rotate" from="0 32 34" to="360 32 34" dur="2s" repeatCount="indefinite"/></path>'
-            f'<circle cx="32" cy="34" r="3.5" fill="{t["accent3"]}"/>')
-
-
 SECTIONS = [
     # slug, title, kind, subtitle, status, status is "live" (pulsing green dot), icon
     ("about", "about", "Engineer", "who I am and what I like to run", "Running", True, icon_container),
@@ -541,7 +526,6 @@ SECTIONS = [
     ("projects", "projects", "Deployment", "what I designed, built and shipped", "5/5 Ready", True, icon_pods),
     ("stack", "stack", "ConfigMap", "the tools I reach for, layer by layer", "7 keys", False, icon_layers),
     ("languages", "languages", "Metrics", "bytes of code across my public repos", "Scraped daily", True, icon_metrics),
-    ("how", "how this page works", "CronJob", "rebuilt every night by a GitHub Action", "17 3 * * *", False, icon_cron),
 ]
 
 

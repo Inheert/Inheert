@@ -100,19 +100,6 @@ Je suis Théo, **développeur DevOps et infrastructure**, Common Core validé à
 </details>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/generated/section-how-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="assets/generated/section-how-light.svg">
-  <img alt="How this page works" src="assets/generated/section-how-dark.svg" width="100%">
-</picture>
-
-No stats service, no visitor counter. The cards above are drawn by [`scripts/generate.py`](scripts/generate.py), standard-library Python only:
-
-1. A [GitHub Action](.github/workflows/profile.yml) runs every night and asks the GraphQL API for my contributions, repos and languages.
-2. The script draws each card twice, as hand-written SVG with CSS and SMIL animations, once for the dark theme and once for the light one. `<picture>` picks the one that matches yours.
-3. The Action commits the result.
-
-
-<picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/generated/footer-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/generated/footer-light.svg">
   <img alt="" src="assets/generated/footer-dark.svg" width="100%">
