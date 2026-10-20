@@ -2,8 +2,8 @@
 """Generate the profile README visuals from live GitHub data.
 
 Stdlib only, so the workflow needs no `pip install`. Every card is written
-twice (dark and light) into assets/generated/, and the README's ACTIVITY
-block is rewritten in place.
+twice (dark and light) into assets/generated/, and the workflow commits
+them.
 
     GITHUB_TOKEN=... python3 scripts/generate.py
 """
@@ -14,7 +14,6 @@ import datetime as dt
 import json
 import math
 import os
-import re
 import shutil
 import subprocess
 import urllib.request
@@ -25,7 +24,6 @@ from xml.sax.saxutils import escape
 LOGIN = os.environ.get("PROFILE_LOGIN", "Inheert")
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "assets" / "generated"
-README = ROOT / "README.md"
 
 # Languages that are build plumbing rather than something written by hand.
 IGNORED_LANGUAGES = {"Makefile", "CMake", "Batchfile", "Dockerfile", "Shell", "HTML", "CSS"}
@@ -50,10 +48,12 @@ THEMES = {
 }
 
 ROLES = [
+    "containers: Docker, Compose",
+    "orchestration: Kubernetes, K3s",
+    "GitOps & CI/CD: Argo CD, Actions",
+    "infra: Nginx, Caddy, Linux, VPS",
+    "observability: ELK stack",
     "backend: Go, Python, PostgreSQL",
-    "infra: Docker, Kubernetes, Nginx",
-    "microservices, auth & observability",
-    "gamedev on the side: Godot, Lua",
     "open to internships",
 ]
 
@@ -120,7 +120,6 @@ def fetch() -> dict:
     if "errors" in res:
         raise SystemExit(f"GraphQL error: {res['errors']}")
     user = res["data"]["user"]
-    user["events"] = _request(f"https://api.github.com/users/{LOGIN}/events/public?per_page=30")
     return user
 
 
@@ -179,8 +178,6 @@ def summarize(user: dict) -> dict:
         "uptime": f"{months // 12} years, {months % 12} months",
         "last_repo": last["name"] if last else "-",
         "last_push": last["pushedAt"][:10] if last else "-",
-        "events": user["events"],
-        "generated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     }
 
 
@@ -244,21 +241,36 @@ def header(s: dict, t: dict) -> str:
             f'dur="{total}s" repeatCount="indefinite"/></rect>'
         )
 
-    # Orbits on the right: three tilted ellipses, an electron on each.
+    # A small cluster on the right: a control plane, six workers, packets on the links.
     cx, cy = 770, 115
-    orbits = []
-    for i, (angle, dur, color) in enumerate([(0, 6, t["accent"]), (60, 8, t["accent2"]), (120, 7, t["accent3"])]):
-        path = f"M {cx - 92} {cy} a 92 34 0 1 0 184 0 a 92 34 0 1 0 -184 0"
-        orbits.append(
-            f'<g transform="rotate({angle} {cx} {cy})">'
-            f'<path id="o{i}" d="{path}" fill="none" stroke="{color}" stroke-opacity=".35" stroke-width="1.5"/>'
-            f'<circle r="5" fill="{color}" filter="url(#glow)">'
-            f'<animateMotion dur="{dur}s" repeatCount="indefinite" begin="-{i * 1.7}s"><mpath href="#o{i}"/></animateMotion>'
-            f"</circle></g>"
+    workers = [(cx + 98 * math.cos(math.radians(a)), cy + 78 * math.sin(math.radians(a)))
+               for a in range(-90, 270, 60)]
+    links, nodes = [], []
+    ring = " ".join(f"{x:.1f},{y:.1f}" for x, y in workers)
+    links.append(f'<polygon points="{ring}" fill="none" stroke="{t["faint"]}" stroke-opacity=".5" stroke-dasharray="2 5"/>')
+    for i, (x, y) in enumerate(workers):
+        color = (t["accent"], t["accent2"], t["accent3"])[i % 3]
+        links.append(
+            f'<path id="k{i}" d="M {cx} {cy} L {x:.1f} {y:.1f}" stroke="{t["faint"]}" stroke-width="1.5" class="flow"/>'
+            f'<circle r="3.5" fill="{color}" filter="url(#glow)">'
+            f'<animateMotion dur="{1.6 + i * 0.25:.2f}s" begin="-{i * 0.4:.1f}s" repeatCount="indefinite" '
+            f'keyPoints="{"0;1" if i % 2 else "1;0"}" keyTimes="0;1" calcMode="linear"><mpath href="#k{i}"/></animateMotion></circle>'
         )
-    nucleus = (f'<circle cx="{cx}" cy="{cy}" r="16" fill="url(#core)">'
-               f'<animate attributeName="r" values="14;18;14" dur="3s" repeatCount="indefinite"/></circle>'
-               f'<text x="{cx}" y="{cy + 5}" text-anchor="middle" class="core">42</text>')
+        pods = "".join(
+            f'<rect x="{x - 10 + j * 7:.1f}" y="{y - 3:.1f}" width="5" height="6" rx="1" fill="{color}">'
+            f'<animate attributeName="opacity" values=".25;1;.25" dur="{2 + (i + j) % 3 * 0.7:.1f}s" '
+            f'begin="{(i * 3 + j) * 0.21:.2f}s" repeatCount="indefinite"/></rect>'
+            for j in range(3)
+        )
+        nodes.append(f'<rect x="{x - 15:.1f}" y="{y - 10:.1f}" width="30" height="20" rx="5" '
+                     f'fill="{t["panel"]}" stroke="{color}" stroke-opacity=".8"/>{pods}')
+    hexagon = " ".join(f"{cx + 24 * math.cos(math.radians(a)):.1f},{cy + 24 * math.sin(math.radians(a)):.1f}"
+                       for a in range(30, 390, 60))
+    cluster = (
+        "".join(links) + "".join(nodes)
+        + f'<polygon points="{hexagon}" fill="url(#core)"><animate attributeName="opacity" values=".85;1;.85" dur="3s" repeatCount="indefinite"/></polygon>'
+        f'<text x="{cx}" y="{cy + 4}" text-anchor="middle" class="core">k8s</text>'
+    )
 
     sparks = "".join(
         f'<circle cx="{x}" cy="{y}" r="1.6" fill="{t["accent"]}">'
@@ -277,6 +289,8 @@ def header(s: dict, t: dict) -> str:
       .d1 {{ animation-delay: .15s }} .d2 {{ animation-delay: .3s }}
       @keyframes rise {{ from {{ opacity: 0; transform: translateY(14px) }} to {{ opacity: 1; transform: none }} }}
       .scan {{ animation: scan 7s linear infinite; }}
+      .flow {{ stroke-dasharray: 3 5; animation: dash 1s linear infinite; }}
+      @keyframes dash {{ to {{ stroke-dashoffset: -16 }} }}
       @keyframes scan {{ from {{ transform: translateX(-200px) }} to {{ transform: translateX(1100px) }} }}
     """
     body = f"""
@@ -308,9 +322,9 @@ def header(s: dict, t: dict) -> str:
       {sparks}
     </g>
     <text x="54" y="86" class="name in">{escape(s["name"])}</text>
-    <text x="56" y="116" class="aka in d1">aka @{LOGIN} · backend &amp; infrastructure developer</text>
+    <text x="56" y="116" class="aka in d1">aka @{LOGIN} · DevOps &amp; infrastructure developer</text>
     <g class="in d2"><text x="{tx - 24}" y="{ty}" class="pr">❯</text>{"".join(roles)}</g>
-    {"".join(orbits)}{nucleus}
+    {cluster}
     """
     return svg(w, h, body, f"{s['name']} — {', '.join(ROLES)}", style)
 
@@ -324,14 +338,14 @@ def terminal(s: dict, t: dict) -> str:
         ("title", f"{LOGIN.lower()}@github"),
         ("rule", "─" * 26),
         ("Name", s["name"]),
-        ("Role", "backend & infra developer"),
+        ("Role", "DevOps & infrastructure developer"),
         ("School", "42 Mulhouse · Common Core done"),
         ("Uptime", s["uptime"]),
         ("Repos", f"{s['repos']} public · {s['stars']} ★ · {s['followers']} followers"),
         ("Contribs", f"{s['total']} in the last year ({s['active_days']} active days)"),
         ("Streak", f"current {s['current_streak']}d · best {s['best_streak']}d"),
         ("Langs", " · ".join(top)),
-        ("Stack", "Go · Python · PostgreSQL · Docker · K8s"),
+        ("Stack", "Docker · K8s · Argo CD · Nginx · Go · Python"),
         ("Status", "open to internships"),
         ("Last push", f"{s['last_repo']} ({s['last_push']})"),
     ]
@@ -401,7 +415,7 @@ def terminal(s: dict, t: dict) -> str:
 # ---------------------------------------------------------------- languages
 
 def languages(s: dict, t: dict) -> str:
-    w, h = 900, 150
+    w, h = 900, 112
     langs = s["langs"][:8]
     total = sum(v for _, v in langs) or 1
     bar_w = w - 48
@@ -413,11 +427,11 @@ def languages(s: dict, t: dict) -> str:
         color = s["lang_colors"].get(name, "#888")
         if luminance(color) < 0.12 and t is THEMES["dark"]:
             color = mix(color, "#ffffff", 0.45)  # Lua's navy vanishes on a dark panel
-        segs.append(f'<rect x="{x:.1f}" y="56" width="{seg:.1f}" height="12" fill="{color}" class="seg" '
+        segs.append(f'<rect x="{x:.1f}" y="24" width="{seg:.1f}" height="12" fill="{color}" class="seg" '
                     f'style="animation-delay:{0.1 + i * 0.08:.2f}s"><title>{escape(name)} {pct:.1%}</title></rect>')
         x += seg
         col, row = i % 4, i // 4
-        lx, ly = 24 + col * 216, 98 + row * 26
+        lx, ly = 24 + col * 216, 66 + row * 26
         legend.append(f'<g class="lg" style="animation-delay:{0.5 + i * 0.07:.2f}s">'
                       f'<circle cx="{lx + 6}" cy="{ly - 4}" r="5" fill="{color}"/>'
                       f'<text x="{lx + 18}" y="{ly}"><tspan class="ln">{escape(name)}</tspan>'
@@ -434,20 +448,144 @@ def languages(s: dict, t: dict) -> str:
     """
     body = f"""
     {panel(t, w, h)}
-    <text x="24" y="34" class="h">languages</text>
-    <text x="{w - 24}" y="34" class="sub" text-anchor="end">bytes of code across public repos · build files excluded</text>
-    <clipPath id="bar"><rect x="24" y="56" width="{bar_w}" height="12" rx="6"/></clipPath>
-    <rect x="24" y="56" width="{bar_w}" height="12" rx="6" fill="{t["grid"]}"/>
+    <clipPath id="bar"><rect x="24" y="24" width="{bar_w}" height="12" rx="6"/></clipPath>
+    <rect x="24" y="24" width="{bar_w}" height="12" rx="6" fill="{t["grid"]}"/>
     <g clip-path="url(#bar)">{"".join(segs)}</g>
     {"".join(legend)}
     """
     return svg(w, h, body, "Most used languages: " + ", ".join(n for n, _ in langs), style)
 
 
+# ----------------------------------------------------------------- sections
+# Each README section is a "resource": an animated icon, its kind, a status column.
+
+def icon_container(t: dict) -> str:
+    """An isometric shipping container, bobbing on the water."""
+    top = "32,10 56,22 32,34 8,22"
+    left = "8,22 32,34 32,58 8,46"
+    right = "32,34 56,22 56,46 32,58"
+    ridges = "".join(f'<path d="M {x} {22 + (x - 8) / 2 + 3:.1f} V {46 + (x - 8) / 2 - 3:.1f}" stroke="{t["panel"]}" stroke-opacity=".5"/>'
+                     for x in (13, 18, 23, 28))
+    return (f'<g class="bob"><polygon points="{top}" fill="{t["accent"]}"/>'
+            f'<polygon points="{left}" fill="{mix(t["accent"], t["bg"], .25)}"/>{ridges}'
+            f'<polygon points="{right}" fill="{mix(t["accent"], t["bg"], .5)}"/></g>')
+
+
+def icon_pipeline(t: dict) -> str:
+    """Three stages that light up one after the other, then a check."""
+    out = [f'<path d="M 8 34 H 56" stroke="{t["faint"]}" stroke-width="3"/>']
+    for i, x in enumerate((8, 32, 56)):
+        out.append(f'<circle cx="{x}" cy="34" r="8" fill="{t["panel"]}" stroke="{t["accent"]}" stroke-width="2.5"/>'
+                   f'<circle cx="{x}" cy="34" r="5" fill="{t["accent"]}" opacity="0">'
+                   f'<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;{.1 + i * .2:.2f};{.15 + i * .2:.2f};.9;1" '
+                   f'dur="3s" repeatCount="indefinite"/></circle>')
+    out.append(f'<path d="M 50 34 l 4 4 l 8 -9" fill="none" stroke="{t["ok"]}" stroke-width="3" stroke-linecap="round" opacity="0">'
+               f'<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.62;.66;.9;1" dur="3s" repeatCount="indefinite"/></path>')
+    return "".join(out)
+
+
+def icon_pods(t: dict) -> str:
+    """A replica set: pods scheduled one by one inside a dashed boundary."""
+    out = [f'<rect x="4" y="6" width="56" height="56" rx="10" fill="none" stroke="{t["faint"]}" stroke-dasharray="4 4" class="flow"/>']
+    for i, (x, y) in enumerate([(12, 14), (34, 14), (12, 36), (34, 36)]):
+        color = (t["accent"], t["accent2"], t["accent3"], t["ok"])[i]
+        out.append(f'<rect x="{x}" y="{y}" width="18" height="18" rx="4" fill="{color}" class="pop" '
+                   f'style="animation-delay:{i * .35:.2f}s"/>')
+    return "".join(out)
+
+
+def icon_layers(t: dict) -> str:
+    """Three slabs falling into place, like image layers."""
+    out = []
+    for i, color in enumerate((t["accent3"], t["accent2"], t["accent"])):
+        y = 40 - i * 13
+        out.append(f'<g class="drop" style="animation-delay:{i * .3:.1f}s">'
+                   f'<polygon points="32,{y} 58,{y + 10} 32,{y + 20} 6,{y + 10}" fill="{color}"/>'
+                   f'<polygon points="6,{y + 10} 32,{y + 20} 32,{y + 24} 6,{y + 14}" fill="{mix(color, t["bg"], .35)}"/>'
+                   f'<polygon points="32,{y + 20} 58,{y + 10} 58,{y + 14} 32,{y + 24}" fill="{mix(color, t["bg"], .55)}"/></g>')
+    return "".join(out)
+
+
+def icon_metrics(t: dict) -> str:
+    """A live bar chart."""
+    out = [f'<path d="M 6 58 H 60" stroke="{t["faint"]}" stroke-width="2"/>']
+    for i, vals in enumerate(["30;14;24;30", "18;34;10;18", "38;22;30;38", "12;26;36;12"]):
+        hs = [int(v) for v in vals.split(";")]
+        ys = ";".join(str(56 - h) for h in hs)
+        color = (t["accent"], t["accent2"], t["accent3"], t["ok"])[i]
+        out.append(f'<rect x="{9 + i * 13}" y="{56 - hs[0]}" width="9" height="{hs[0]}" rx="2" fill="{color}">'
+                   f'<animate attributeName="height" values="{vals}" dur="2.4s" repeatCount="indefinite"/>'
+                   f'<animate attributeName="y" values="{ys}" dur="2.4s" repeatCount="indefinite"/></rect>')
+    return "".join(out)
+
+
+def icon_cron(t: dict) -> str:
+    """A clock whose hand never stops."""
+    ticks = "".join(
+        f'<path d="M {32 + 20 * math.cos(math.radians(a)):.1f} {34 + 20 * math.sin(math.radians(a)):.1f} '
+        f'L {32 + 24 * math.cos(math.radians(a)):.1f} {34 + 24 * math.sin(math.radians(a)):.1f}" stroke="{t["muted"]}" stroke-width="2"/>'
+        for a in range(0, 360, 30)
+    )
+    return (f'<circle cx="32" cy="34" r="27" fill="none" stroke="{t["accent"]}" stroke-width="3"/>{ticks}'
+            f'<path d="M 32 34 V 20" stroke="{t["accent2"]}" stroke-width="3" stroke-linecap="round">'
+            f'<animateTransform attributeName="transform" type="rotate" from="0 32 34" to="360 32 34" dur="12s" repeatCount="indefinite"/></path>'
+            f'<path d="M 32 34 V 12" stroke="{t["accent"]}" stroke-width="2" stroke-linecap="round">'
+            f'<animateTransform attributeName="transform" type="rotate" from="0 32 34" to="360 32 34" dur="2s" repeatCount="indefinite"/></path>'
+            f'<circle cx="32" cy="34" r="3.5" fill="{t["accent3"]}"/>')
+
+
+SECTIONS = [
+    # slug, title, kind, subtitle, status, status is "live" (pulsing green dot), icon
+    ("about", "about", "Engineer", "who I am and what I like to run", "Running", True, icon_container),
+    ("experience", "experience", "Job", "1 completed · sole developer · 2022 – 2023", "Completed", False, icon_pipeline),
+    ("projects", "projects", "Deployment", "what I designed, built and shipped", "5/5 Ready", True, icon_pods),
+    ("stack", "stack", "ConfigMap", "the tools I reach for, layer by layer", "7 keys", False, icon_layers),
+    ("languages", "languages", "Metrics", "bytes of code across my public repos", "Scraped daily", True, icon_metrics),
+    ("how", "how this page works", "CronJob", "rebuilt every night by a GitHub Action", "17 3 * * *", False, icon_cron),
+]
+
+
+def section(title: str, kind: str, subtitle: str, status: str, live: bool, icon) -> callable:
+    def render(s: dict, t: dict) -> str:
+        w, h = 900, 84
+        chip_w = len(status) * 13 * 0.62 + 34
+        chip_x = w - 8 - chip_w
+        dot = t["ok"] if live else t["accent"]
+        pulse = (f'<circle cx="{chip_x + 14}" cy="30" r="4" fill="none" stroke="{dot}">'
+                 f'<animate attributeName="r" values="4;10" dur="1.6s" repeatCount="indefinite"/>'
+                 f'<animate attributeName="opacity" values=".8;0" dur="1.6s" repeatCount="indefinite"/></circle>') if live else ""
+        style = f"""
+          .ti {{ font: 700 24px {SANS}; fill: {t["text"]}; letter-spacing: -.3px; }}
+          .kd {{ font: 600 13px {MONO}; fill: {t["accent2"]}; }}
+          .sub {{ font: 13px {MONO}; fill: {t["muted"]}; }}
+          .st {{ font: 600 13px {MONO}; fill: {t["text"]}; }}
+          .flow {{ stroke-dasharray: 4 6; animation: dash 1.2s linear infinite; }}
+          @keyframes dash {{ to {{ stroke-dashoffset: -20 }} }}
+          .bob {{ animation: bob 3s ease-in-out infinite; }}
+          @keyframes bob {{ 50% {{ transform: translateY(-3px) }} }}
+          .pop {{ transform-box: fill-box; transform-origin: center; animation: pop 4s cubic-bezier(.3,1.6,.5,1) infinite both; }}
+          @keyframes pop {{ 0% {{ transform: scale(0) }} 12%, 85% {{ transform: scale(1) }} 100% {{ transform: scale(0) }} }}
+          .drop {{ animation: drop 4s cubic-bezier(.3,1.3,.5,1) infinite both; }}
+          @keyframes drop {{ 0% {{ transform: translateY(-14px); opacity: 0 }} 15%, 85% {{ transform: none; opacity: 1 }} 100% {{ opacity: 0 }} }}
+        """
+        body = f"""
+        <g transform="translate(4 4)">{icon(t)}</g>
+        <text x="84" y="36"><tspan class="ti">{escape(title)}</tspan><tspan class="kd" dx="14">kind: {kind}</tspan></text>
+        <text x="84" y="60" class="sub">{escape(subtitle)}</text>
+        <rect x="{chip_x:.1f}" y="17" width="{chip_w:.1f}" height="26" rx="13" fill="{t["panel"]}" stroke="{t["border"]}"/>
+        {pulse}<circle cx="{chip_x + 14:.1f}" cy="30" r="4" fill="{dot}"/>
+        <text x="{chip_x + 25:.1f}" y="34.5" class="st">{escape(status)}</text>
+        <path id="wire" d="M 84 {h - 6} H {w - 8}" stroke="{t["border"]}" stroke-width="1.5" class="flow"/>
+        <circle r="3" fill="{t["accent"]}"><animateMotion dur="5s" repeatCount="indefinite"><mpath href="#wire"/></animateMotion></circle>
+        """
+        return svg(w, h, body, f"{title} (kind: {kind}) — {status}", style)
+    return render
+
+
 # ------------------------------------------------------------------- footer
 
 def footer(s: dict, t: dict) -> str:
-    w, h = 900, 90
+    w, h = 900, 70
     waves = []
     for i, (color, dur, amp, op) in enumerate([(t["accent2"], 9, 10, .35), (t["accent"], 6, 14, .5), (t["accent3"], 12, 8, .3)]):
         def wave(phase: float) -> str:
@@ -456,65 +594,18 @@ def footer(s: dict, t: dict) -> str:
         frames = ";".join(wave(p) for p in (0, math.pi / 2, math.pi, 3 * math.pi / 2, 2 * math.pi))
         waves.append(f'<path fill="none" stroke="{color}" stroke-width="2" stroke-opacity="{op}" d="{wave(0)}">'
                      f'<animate attributeName="d" dur="{dur}s" repeatCount="indefinite" values="{frames}"/></path>')
-    style = f".f {{ font: 12px {MONO}; fill: {t['muted']}; }}"
-    body = (f'{"".join(waves)}<text x="{w / 2}" y="82" text-anchor="middle" class="f">'
-            f"generated by scripts/generate.py · last run {s['generated']}</text>")
-    return svg(w, h, body, "Decorative footer", style)
-
-
-# ------------------------------------------------------------------- README
-
-EVENT_TEXT = {
-    "PushEvent": ("🔨", lambda e: "pushed to"),
-    "CreateEvent": ("🌱", lambda e: f"created {e['payload'].get('ref_type', 'something')} in"),
-    "PullRequestEvent": ("🔀", lambda e: f"{e['payload'].get('action', 'touched')} a pull request in"),
-    "IssuesEvent": ("🐛", lambda e: f"{e['payload'].get('action', 'touched')} an issue in"),
-    "WatchEvent": ("⭐", lambda e: "starred"),
-    "ForkEvent": ("🍴", lambda e: "forked"),
-    "ReleaseEvent": ("🚀", lambda e: "published a release of"),
-    "PublicEvent": ("📢", lambda e: "open-sourced"),
-}
-
-
-def activity(s: dict) -> str:
-    rows, seen = [], set()
-    for e in s["events"]:
-        # Skip this repo: the nightly workflow pushes to it.
-        if e["type"] not in EVENT_TEXT or e["repo"]["name"] == f"{LOGIN}/{LOGIN}":
-            continue
-        icon, text = EVENT_TEXT[e["type"]]
-        repo = e["repo"]["name"]
-        line = f"{text(e)} [{repo}](https://github.com/{repo})"
-        day = e["created_at"][:10]
-        if (line, day) in seen:
-            continue
-        seen.add((line, day))
-        rows.append(f"{icon} {line} <sub>· {day}</sub>")
-        if len(rows) == 6:
-            break
-    if not rows:
-        rows = ["😴 nothing public lately, probably deep in a private repo"]
-    return "\n".join(f"{i + 1}. {r}" for i, r in enumerate(rows))
-
-
-def update_readme(s: dict) -> None:
-    text = README.read_text()
-    new = re.sub(
-        r"(<!-- ACTIVITY:START -->).*?(<!-- ACTIVITY:END -->)",
-        lambda m: f"{m.group(1)}\n{activity(s)}\n{m.group(2)}",
-        text,
-        flags=re.S,
-    )
-    README.write_text(new)
+    body = "".join(waves)
+    return svg(w, h, body, "Decorative footer")
 
 
 def main() -> None:
     s = summarize(fetch())
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, render in [("header", header), ("terminal", terminal), ("languages", languages), ("footer", footer)]:
+    cards = [("header", header), ("terminal", terminal), ("languages", languages), ("footer", footer)]
+    cards += [(f"section-{slug}", section(*rest)) for slug, *rest in SECTIONS]
+    for name, render in cards:
         for theme, palette in THEMES.items():
             (OUT / f"{name}-{theme}.svg").write_text(render(s, palette))
-    update_readme(s)
     print(f"ok: {s['total']} contributions, {len(s['langs'])} languages, streak {s['current_streak']}/{s['best_streak']}")
 
 
